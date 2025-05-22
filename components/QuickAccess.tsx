@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const QuickAccess = () => {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Accesos rápidos</Text>
-      <TouchableOpacity style={ styles.container }>
+      <TouchableOpacity style={ styles.container } onPress={() => router.push('./Notifications')}>
         <Text style={ styles.buttonText }>📜 NOTIFICACIONES</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={ styles.container }>
+      <TouchableOpacity style={ styles.container } onPress={() => router.push('./Settings')}>
         <Text style={ styles.buttonText }>⚙️ AJUSTES</Text>
       </TouchableOpacity>
     </View>
