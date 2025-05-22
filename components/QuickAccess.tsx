@@ -1,29 +1,41 @@
 import React from 'react';
-import { View, Button, Alert, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const QuickAccess = () => {
   return (
-    <View style={ styles.container }>
-      <Text style={ styles.title }>Accesos rápidos</Text>
-      <Button title="📜 Historial de eventos" onPress={() => Alert.alert('Ir al historial')} />
-      <Button title="🎵 Sonidos y videos" onPress={() => Alert.alert('Ir a multimedia')} />
-      <Button title="⚙️ Ajustes" onPress={() => Alert.alert('Ir a ajustes')} />
+    <View style={styles.container}>
+      <Text style={styles.title}>Accesos rápidos</Text>
+      <TouchableOpacity style={ styles.container }>
+        <Text style={ styles.buttonText }>📜 NOTIFICACIONES</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={ styles.container }>
+        <Text style={ styles.buttonText }>⚙️ AJUSTES</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#fff', 
-        borderRadius: 16, 
-        padding: 16, 
-        gap: 8
-    },
-    title: {
-        fontSize: 16, 
-        fontWeight: '600', 
-        marginBottom: 2
-    }
+  container: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    padding: 16,
+    alignItems: 'center',
+    borderColor: '#fff',
+    borderWidth: 1,
+    gap: 10
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+    color: '#fff'
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "500",
+  }
 })
 
 export default QuickAccess;
