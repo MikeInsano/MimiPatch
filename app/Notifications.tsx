@@ -1,7 +1,5 @@
-import Header from '@/components/Header';
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
 
 const notificacionesEjemplo = [
     { id: '1', title: 'Movimiento detectado', description: 'Se detectó movimiento a las 08:30 AM' },
@@ -10,46 +8,62 @@ const notificacionesEjemplo = [
 ];
 
 export default function Notifications() {
-    const router = useRouter();
+    const [notificaciones, setNotificaciones] = useState(notificacionesEjemplo);
+
+    const eliminarNotificacion = (id: string) => {
+        setNotificaciones(prev => prev.filter(notif => notif.id !== id));
+    };
+
+    const eliminarTodas = () => {
+        setNotificaciones([]);
+    };
 
     return (
         <View style={styles.container}>
-            <Header />
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <Text style={styles.backText}>← Volver</Text>
-            </TouchableOpacity>
-
             <Text style={styles.title}>📜 Notificaciones</Text>
 
-            <FlatList
-                data={notificacionesEjemplo}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.notificationCard}>
-                        <Text style={styles.notificationTitle}>{item.title}</Text>
-                        <Text style={styles.notificationDescription}>{item.description}</Text>
-                    </View>
-                )}
-                ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-                contentContainerStyle={{ paddingBottom: 24 }}
-            />
+            {notificaciones.length > 0 ? (
+                <>
+                    <FlatList
+                        data={notificaciones}
+                        keyExtractor={item => item.id}
+                        renderItem={({ item }) => (
+                            <View style={styles.notificationCard}>
+                                <View style={styles.row}>
+                                    <View>
+                                        <Text style={styles.notificationTitle}>{item.title}</Text>
+                                        <Text style={styles.notificationDescription}>{item.description}</Text>
+                                    </View>
+                                    <TouchableOpacity onPress={() => eliminarNotificacion(item.id)}>
+                                        <Text style={styles.deleteText}>🗑️</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+                        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+                        contentContainerStyle={{ paddingBottom: 24 }}
+                    />
+
+                    <TouchableOpacity onPress={eliminarTodas} style={styles.container}>
+                        <Text style={styles.clearAllText}>Eliminar todas</Text>
+                    </TouchableOpacity>
+                </>
+            ) : (
+                <Text style={{ color: '#aaa', marginTop: 20 }}>No hay notificaciones.</Text>
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: '#1A1A1A',
-        padding: 20,
-    },
-    backButton: {
-        marginBottom: 12,
-        paddingVertical: 6,
-        paddingHorizontal: 8,
-        alignSelf: 'flex-start',
-        backgroundColor: '#3A3A3A',
-        borderRadius: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 20,
+        padding: 16,
+        alignItems: 'center',
+        borderColor: '#fff',
+        borderWidth: 1,
+        gap: 10
     },
     backText: {
         color: '#FFF',
@@ -62,9 +76,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     notificationCard: {
-        backgroundColor: '#2E2E2E',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderRadius: 12,
-        padding: 16,
+        padding: 15,
+        width: 300
     },
     notificationTitle: {
         color: '#FFF',
@@ -76,4 +91,21 @@ const styles = StyleSheet.create({
         marginTop: 6,
         fontSize: 14,
     },
+    deleteText: {
+        fontSize: 18,
+        color: '#FF7070',
+        marginLeft: 10,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+        alignItems: 'center',
+    },
+    clearAllText: {
+        color: "#ffffff",
+        fontSize: 15,
+        fontWeight: "500",
+    },
+
 });

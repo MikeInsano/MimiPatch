@@ -6,9 +6,9 @@ const QuickAccess = () => {
   const router = useRouter();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Accesos rápidos</Text>
+      <Text style={styles.title}>📜 NOTIFICACIONES</Text>
       <TouchableOpacity style={ styles.container } onPress={() => router.push('./Notifications')}>
-        <Text style={ styles.buttonText }>📜 NOTIFICACIONES</Text>
+        <Text style={ styles.buttonText }></Text>
       </TouchableOpacity>
       <TouchableOpacity style={ styles.container } onPress={() => router.push('./Settings')}>
         <Text style={ styles.buttonText }>⚙️ AJUSTES</Text>

@@ -12,7 +12,6 @@ const BabyStatus = () => (
                 <Text style={ styles.statusValue }>Tranquilo</Text>
             </View>
         </View>
-        <Text style={ styles.statusMovement }>Sonido detectado hace 3 minutos</Text>
     </View>
 );
 

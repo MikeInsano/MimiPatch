@@ -13,8 +13,8 @@ export default function Settings() {
         <ScrollView style={styles.container}>
             <Header />
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                            <Text style={styles.backText}>← Volver</Text>
-                        </TouchableOpacity>
+                <Text style={styles.backText}>← Volver</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>⚙️ Ajustes</Text>
 
             <View style={styles.optionRow}>

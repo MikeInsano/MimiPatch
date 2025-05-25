@@ -3,7 +3,7 @@ import { SafeAreaView, ScrollView, View } from 'react-native';
 import BabyStatus from '../components/BabyStatus';
 import Header from '../components/Header';
 import Player from '../components/Player';
-import QuickAccess from '../components/QuickAccess';
+import Notifications from './Notifications';
 
 export default function App() {
   return (
@@ -13,7 +13,7 @@ export default function App() {
         <BabyStatus />
         <View style={{ gap: 16 }}>
           <Player />
-          <QuickAccess />
+          <Notifications/>
         </View>
       </ScrollView>
     </SafeAreaView>
