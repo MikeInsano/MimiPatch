@@ -1,7 +1,8 @@
 import Header from '@/components/Header';
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity } from 'react-native';
+import NavBar from '@/components/navBar';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 export default function Settings() {
     const [modoOscuro, setModoOscuro] = useState(false);
@@ -36,7 +37,7 @@ export default function Settings() {
                 <Text style={styles.optionText}>Enviar reportes por correo</Text>
                 {/* Por ahora no tiene switch, es solo texto */}
             </View>
-
+            <NavBar />
         </ScrollView>
     );
 }

@@ -1,3 +1,4 @@
+import NavBar from '@/components/navBar'
 import React from 'react'
 
 const notifications = [
@@ -38,6 +39,7 @@ const NotificationHistory = () => {
           </div>
         ))}
       </div>
+        <NavBar />
     </div>
   )
 }
