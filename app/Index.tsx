@@ -3,7 +3,7 @@ import { SafeAreaView, ScrollView, View } from 'react-native';
 import BabyStatus from '../components/BabyStatus';
 import Header from '../components/Header';
 import Player from '../components/Player';
-import Notifications from './Notifications';
+import Notifications from './notifications';
 
 export default function App() {
   return (
