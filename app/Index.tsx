@@ -1,29 +1,16 @@
-import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Home() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f1f4f9' }}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Encabezado */}
         <View style={styles.header}>
           <Text style={styles.title}>Mimi Patch</Text>
           <View style={styles.user}>
             <Text>Hola, Usuario!</Text>
           </View>
         </View>
-
-        {/* Tarjeta principal */}
         <View style={styles.card}>
-          {/* Estado del bebé */}
           <View style={styles.section}>
             <Text style={styles.label}>Estado del bebé:</Text>
             <View style={styles.statusRow}>
@@ -31,8 +18,6 @@ export default function Home() {
               <Text style={styles.status}>Conectado</Text>
             </View>
           </View>
-
-          {/* Reproducción */}
           <View style={styles.section}>
             <Text style={styles.subtitle}>En Reproducción:</Text>
             <View style={styles.trackCard}>
@@ -51,8 +36,6 @@ export default function Home() {
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Notificaciones */}
           <View style={styles.section}>
             <View style={styles.notificationBox}>
               <Text style={styles.notificationTitle}>Notificaciones</Text>
