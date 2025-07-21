@@ -1,23 +1,101 @@
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 
 export default function Home() {
+  const [babyStatus, setBabyStatus] = useState('Tranquilo');
+  const [connectionStatus, setConnectionStatus] = useState('Desconectado');
+  const [lastMovement, setLastMovement] = useState(null);
+  const [ipAddress, setIpAddress] = useState('192.168.100.21'); // Cambia por la IP de tu ESP32
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Función mejorada para obtener datos del ESP32
+  const fetchData = async () => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(`http://${ipAddress}/datos`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+      
+      const data = await response.json();
+      
+      // Actualizar estado según los datos recibidos
+      if (data.movimiento) {
+        setBabyStatus('¡Movimiento detectado!');
+        setLastMovement(new Date().toLocaleTimeString());
+      } else {
+        setBabyStatus('Tranquilo');
+      }
+      
+      setConnectionStatus('Conectado');
+      setIsConnected(true);
+      
+    } catch (error) {
+      setConnectionStatus('Desconectado');
+      setIsConnected(false);
+      console.error('Error de conexión:', error.message);
+    }
+  };
+
+  // Configurar polling mejorado
+  useEffect(() => {
+    let isMounted = true;
+    const interval = setInterval(() => {
+      if (isMounted) fetchData();
+    }, 1000);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [ipAddress]);
+
+  // Función para probar la conexión manualmente
+  const testConnection = async () => {
+    await fetchData();
+    Alert.alert(
+      'Estado de conexión',
+      `IP: ${ipAddress}\nEstado: ${connectionStatus}`,
+      [{ text: 'OK' }]
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f1f4f9' }}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Mimi Patch</Text>
-          <View style={styles.user}>
-            <Text>Hola, Usuario!</Text>
-          </View>
+          <TouchableOpacity 
+            onPress={testConnection} 
+            style={[
+              styles.connectionButton,
+              isConnected ? styles.connectedButton : styles.disconnectedButton
+            ]}
+          >
+            <Text style={styles.connectionText}>{connectionStatus}</Text>
+          </TouchableOpacity>
         </View>
+        
         <View style={styles.card}>
           <View style={styles.section}>
             <Text style={styles.label}>Estado del bebé:</Text>
             <View style={styles.statusRow}>
-              <TextInput value="Tranquilo" editable={false} style={styles.inputStatus} />
-              <Text style={styles.status}>Conectado</Text>
+              <TextInput 
+                value={babyStatus} 
+                editable={false} 
+                style={[
+                  styles.inputStatus,
+                  babyStatus.includes('¡Movimiento') ? styles.alertStatus : styles.normalStatus
+                ]} 
+              />
             </View>
           </View>
+
           <View style={styles.section}>
             <Text style={styles.subtitle}>En Reproducción:</Text>
             <View style={styles.trackCard}>
@@ -29,21 +107,23 @@ export default function Home() {
               />
               <View style={styles.trackInfo}>
                 <Text style={styles.trackTitle}>Ruido Blanco</Text>
-                <Text style={styles.artist}>Leonid Kogan, Vivaldi, Mendelssohn</Text>
-              </View>
-              <TouchableOpacity style={styles.changeBtn}>
-                <Text style={{ fontWeight: 'bold' }}>Cambiar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.section}>
-            <View style={styles.notificationBox}>
-              <Text style={styles.notificationTitle}>Notificaciones</Text>
-              <View style={styles.notificationBubble}>
-                <Text style={{ color: '#5e2ca5' }}>Se detectó movimiento a las 8:30 AM</Text>
+                <Text style={styles.artist}>Sonido relajante para bebés</Text>
               </View>
             </View>
           </View>
+
+          {lastMovement && (
+            <View style={styles.section}>
+              <View style={styles.notificationBox}>
+                <Text style={styles.notificationTitle}>Último evento</Text>
+                <View style={styles.notificationBubble}>
+                  <Text style={styles.notificationText}>
+                    Movimiento detectado a las {lastMovement}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -53,7 +133,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    paddingBottom: 80,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
@@ -64,10 +144,27 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#5e2ca5',
   },
-  user: {
-    flexDirection: 'row',
+  connectionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  connectedButton: {
+    backgroundColor: '#e0f7fa',
+    borderWidth: 1,
+    borderColor: '#00acc1',
+  },
+  disconnectedButton: {
+    backgroundColor: '#ffebee',
+    borderWidth: 1,
+    borderColor: '#ef5350',
+  },
+  connectionText: {
+    fontWeight: '600',
   },
   card: {
     backgroundColor: '#fff',
@@ -77,6 +174,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 3,
+    marginBottom: 20,
   },
   section: {
     marginBottom: 20,
@@ -84,40 +182,44 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: '600',
     marginBottom: 8,
+    color: '#333',
+    fontSize: 16,
   },
   inputStatus: {
     flex: 1,
-    padding: 10,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#b5d0f0',
     borderRadius: 12,
+    fontSize: 16,
+  },
+  normalStatus: {
+    borderColor: '#b5d0f0',
     backgroundColor: '#eaf4ff',
     color: '#0088cc',
+  },
+  alertStatus: {
+    borderColor: '#ffb5b5',
+    backgroundColor: '#ffeaea',
+    color: '#ff0000',
+    fontWeight: 'bold',
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-  },
-  status: {
-    color: '#00c58e',
-    fontWeight: '500',
-    marginLeft: 10,
   },
   subtitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   trackCard: {
     backgroundColor: '#f6f8fc',
     borderRadius: 15,
-    padding: 12,
+    padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
   },
   image: {
     width: 70,
@@ -130,34 +232,58 @@ const styles = StyleSheet.create({
   trackTitle: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
   artist: {
     fontSize: 14,
     color: '#666',
   },
-  changeBtn: {
-    backgroundColor: '#ddd',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
   notificationBox: {
-    borderWidth: 2,
-    borderColor: '#d6c8f9',
-    borderRadius: 20,
-    padding: 20,
-    backgroundColor: '#f9f6ff',
+    borderWidth: 1,
+    borderColor: '#d1c4e9',
+    borderRadius: 15,
+    padding: 15,
+    backgroundColor: '#f3e5f5',
   },
   notificationTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
+    marginBottom: 8,
+    color: '#5e2ca5',
   },
   notificationBubble: {
-    backgroundColor: '#d6c8f9',
+    backgroundColor: '#e1bee7',
     padding: 12,
-    borderRadius: 15,
+    borderRadius: 12,
+  },
+  notificationText: {
+    color: '#4a148c',
+    textAlign: 'center',
+  },
+  ipConfigContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 10,
+  },
+  ipInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#b39ddb',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 10,
+    backgroundColor: '#fff',
+    fontSize: 16,
+  },
+  saveButton: {
+    backgroundColor: '#5e2ca5',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
