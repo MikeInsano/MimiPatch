@@ -1,97 +1,157 @@
-import { useState, useEffect } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput,
+  TouchableOpacity, View, Alert, ActivityIndicator
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutWithSupabase } from '@/contexts/auth/authThunks';
+import { RootState } from '@/contexts/store';
+import { supabase } from '@/utils/supabase';
 
 export default function Home() {
   const [babyStatus, setBabyStatus] = useState('Tranquilo');
   const [connectionStatus, setConnectionStatus] = useState('Desconectado');
-  const [lastMovement, setLastMovement] = useState(null);
-  const [ipAddress, setIpAddress] = useState('192.168.100.21'); // Cambia por la IP de tu ESP32
+  const [lastMovement, setLastMovement] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastProcessedRef = useRef<string | null>(null);
 
-  // Función mejorada para obtener datos del ESP32
-  const fetchData = async () => {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
-      
-      const response = await fetch(`http://${ipAddress}/datos`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeout);
+  const dispatch = useDispatch();
+  const { loading: authLoading } = useSelector((state: RootState) => state.auth);
 
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      
-      const data = await response.json();
-      
-      // Actualizar estado según los datos recibidos
-      if (data.movimiento) {
-        setBabyStatus('¡Movimiento detectado!');
-        setLastMovement(new Date().toLocaleTimeString());
-      } else {
-        setBabyStatus('Tranquilo');
-      }
-      
-      setConnectionStatus('Conectado');
-      setIsConnected(true);
-      
-    } catch (error) {
-      setConnectionStatus('Desconectado');
-      setIsConnected(false);
-      console.error('Error de conexión:', error.message);
+  const clearExistingTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
   };
 
-  // Configurar polling mejorado
-  useEffect(() => {
-    let isMounted = true;
-    const interval = setInterval(() => {
-      if (isMounted) fetchData();
-    }, 1000);
-    
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [ipAddress]);
+  const fetchData = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('movimientos')
+      .select('*')
+      .order('fecha_hora', { ascending: false })
+      .limit(1);
 
-  // Función para probar la conexión manualmente
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      const movimiento = data[0];
+      const intensidad = movimiento.intensidad;
+      const fechaHora = movimiento.fecha_hora;
+
+      setConnectionStatus('Conectado');
+      setIsConnected(true);
+
+      // Solo procesar si es un nuevo movimiento (comparando fecha_hora)
+      if (fechaHora !== lastProcessedRef.current && intensidad > 0.1) {
+        lastProcessedRef.current = fechaHora;
+
+        setLastMovement(new Date(fechaHora).toLocaleTimeString());
+        setBabyStatus('¡Movimiento detectado!');
+
+        clearExistingTimeout();
+        timeoutRef.current = setTimeout(() => {
+          setBabyStatus('Tranquilo');
+          timeoutRef.current = null;
+        }, 3000);
+      }
+    } else {
+      setConnectionStatus('Sin datos');
+      setIsConnected(false);
+      setLastMovement(null);
+      setBabyStatus('Tranquilo');
+    }
+  } catch (error) {
+    console.error('Error al obtener datos de Supabase:', error);
+    setConnectionStatus('Desconectado');
+    setIsConnected(false);
+    setBabyStatus('Tranquilo');
+    setLastMovement(null);
+  }
+};
+
+
+
+  useEffect(() => {
+    fetchData(); // inicial
+    const interval = setInterval(fetchData, 1000);
+    return () => {
+      clearInterval(interval);
+      clearExistingTimeout();
+    };
+  }, []);
+
   const testConnection = async () => {
     await fetchData();
     Alert.alert(
       'Estado de conexión',
-      `IP: ${ipAddress}\nEstado: ${connectionStatus}`,
+      `Estado: ${connectionStatus}`,
       [{ text: 'OK' }]
     );
   };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Estás seguro de que quieres salir de tu cuenta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cerrar sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dispatch(logoutWithSupabase()).unwrap();
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo cerrar sesión');
+              console.error('Error al cerrar sesión:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  if (authLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#5e2ca5" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f1f4f9' }}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Mimi Patch</Text>
-          <TouchableOpacity 
-            onPress={testConnection} 
-            style={[
-              styles.connectionButton,
-              isConnected ? styles.connectedButton : styles.disconnectedButton
-            ]}
-          >
-            <Text style={styles.connectionText}>{connectionStatus}</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              onPress={testConnection}
+              style={[
+                styles.connectionButton,
+                isConnected ? styles.connectedButton : styles.disconnectedButton
+              ]}
+            >
+              <Text style={styles.connectionText}>{connectionStatus}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        
+
         <View style={styles.card}>
           <View style={styles.section}>
             <Text style={styles.label}>Estado del bebé:</Text>
             <View style={styles.statusRow}>
-              <TextInput 
-                value={babyStatus} 
-                editable={false} 
+              <TextInput
+                value={babyStatus}
+                editable={false}
                 style={[
                   styles.inputStatus,
                   babyStatus.includes('¡Movimiento') ? styles.alertStatus : styles.normalStatus
-                ]} 
+                ]}
               />
             </View>
           </View>
@@ -124,6 +184,13 @@ export default function Home() {
               </View>
             </View>
           )}
+
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={styles.logoutButton}
+          >
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -134,12 +201,23 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingBottom: 40,
+    paddingTop: 45
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   title: {
     fontSize: 24,
@@ -165,6 +243,21 @@ const styles = StyleSheet.create({
   },
   connectionText: {
     fontWeight: '600',
+    fontSize: 14,
+  },
+  logoutButton: {
+    backgroundColor: '#ffebee',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#ef5350',
+  },
+  logoutText: {
+    color: '#d32f2f',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   card: {
     backgroundColor: '#fff',
@@ -259,31 +352,5 @@ const styles = StyleSheet.create({
   notificationText: {
     color: '#4a148c',
     textAlign: 'center',
-  },
-  ipConfigContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  ipInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#b39ddb',
-    borderRadius: 12,
-    padding: 12,
-    marginRight: 10,
-    backgroundColor: '#fff',
-    fontSize: 16,
-  },
-  saveButton: {
-    backgroundColor: '#5e2ca5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
 });

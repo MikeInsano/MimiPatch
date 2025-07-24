@@ -24,3 +24,12 @@ export async function loginWithMagicLink(email: string) {
   if (error) throw error;
   return true;
 }
+
+export async function logoutUser() {
+  const { error } = await supabase.auth.signOut();
+  
+  if (error) {
+    throw error;
+  }
+  return true;
+}

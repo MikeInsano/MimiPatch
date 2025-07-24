@@ -5,9 +5,9 @@ export async function registerUser(email: string, password: string, name: string
     email,
     password,
     options: {
-      emailRedirectTo: 'mimipatch://auth/callback', // aquí pones tu esquema de deep link correcto
+      emailRedirectTo: 'mimipatch://auth/callback',
       data: {
-        full_name: name, // metadata adicional
+        full_name: name,
       },
     },
   });

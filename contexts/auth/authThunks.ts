@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { loginUser, loginWithMagicLink } from '@/api/supabaseLogin';
+import { loginUser, loginWithMagicLink, logoutUser } from '@/api/supabaseLogin';
 import { registerUser } from '@/api/supabaseRegister';
 
 // Thunk para login con supabase
@@ -38,6 +38,18 @@ export const registerWithSupabase = createAsyncThunk(
       return data.user;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Error en el registro');
+    }
+  }
+);
+
+export const logoutWithSupabase = createAsyncThunk(
+  'auth/logoutWithSupabase',
+  async (_, { rejectWithValue }) => {
+    try {
+      await logoutUser();
+      return true;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Error al cerrar sesión');
     }
   }
 );

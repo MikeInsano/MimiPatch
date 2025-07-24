@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Linking, ActivityIndicator, View, Text } from 'react-native';
-import { supabase } from '../../utils/supabase'; // Asegúrate de que esta ruta apunte a tu instancia
+import { supabase } from '../../utils/supabase';
 import * as WebBrowser from 'expo-web-browser';
 
-WebBrowser.maybeCompleteAuthSession(); // Necesario para manejar autenticación en móvil
+WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthCallback() {
   const router = useRouter();

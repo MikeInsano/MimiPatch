@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { loginWithSupabase, registerWithSupabase, loginWithMagicLinkThunk } from './authThunks';
+import { loginWithSupabase, registerWithSupabase, loginWithMagicLinkThunk, logoutWithSupabase } from './authThunks';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -29,6 +29,7 @@ const authSlice = createSlice({
       state.user = null;
       state.error = null;
       state.registrationSuccess = false;
+      state.magicLinkSent = false;
     },
     resetRegistrationStatus: (state) => {
       state.registrationSuccess = false;
@@ -80,7 +81,24 @@ const authSlice = createSlice({
       .addCase(registerWithSupabase.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || 'Error en el registro';
-      });
+      })
+      
+      // Caso para logout
+      .addCase(logoutWithSupabase.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logoutWithSupabase.fulfilled, (state) => {
+        state.isAuthenticated = false;
+        state.user = null;
+        state.loading = false;
+        state.registrationSuccess = false;
+        state.magicLinkSent = false;
+      })
+      .addCase(logoutWithSupabase.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || 'Error al cerrar sesión';
+      })
   },
 });
 
